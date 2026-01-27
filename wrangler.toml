@@ -1,0 +1,113 @@
+name = "blackroad-content-scheduler"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Development settings
+[dev]
+port = 8787
+local_protocol = "http"
+
+# Environment variables
+[vars]
+ENVIRONMENT = "development"
+BLACKROAD_ORG = "BlackRoad-OS"
+SCRAPE_INTERVAL_MINUTES = "30"
+SELF_HEAL_ENABLED = "true"
+MAX_RETRY_ATTEMPTS = "5"
+
+# KV Namespaces for persistent storage
+[[kv_namespaces]]
+binding = "CONTENT_KV"
+id = "content-scheduler-kv"
+preview_id = "content-scheduler-kv-preview"
+
+[[kv_namespaces]]
+binding = "JOBS_KV"
+id = "agent-jobs-kv"
+preview_id = "agent-jobs-kv-preview"
+
+[[kv_namespaces]]
+binding = "REPOS_KV"
+id = "repos-cache-kv"
+preview_id = "repos-cache-kv-preview"
+
+[[kv_namespaces]]
+binding = "HEALING_KV"
+id = "self-healing-kv"
+preview_id = "self-healing-kv-preview"
+
+# Durable Objects for stateful coordination
+[[durable_objects.bindings]]
+name = "JOB_COORDINATOR"
+class_name = "JobCoordinator"
+
+[[durable_objects.bindings]]
+name = "REPO_SYNC_ENGINE"
+class_name = "RepoSyncEngine"
+
+[[durable_objects.bindings]]
+name = "SELF_HEALER"
+class_name = "SelfHealer"
+
+# Durable Object migrations
+[[migrations]]
+tag = "v1"
+new_classes = ["JobCoordinator", "RepoSyncEngine", "SelfHealer"]
+
+# Cron triggers for scheduled jobs
+[triggers]
+crons = [
+  "*/30 * * * *",    # Every 30 minutes: Scrape repos
+  "0 * * * *",       # Every hour: Cohesiveness check
+  "*/5 * * * *",     # Every 5 minutes: Self-healing check
+  "0 0 * * *"        # Daily: Full sync and cleanup
+]
+
+# Queues for async job processing
+[[queues.producers]]
+queue = "agent-jobs-queue"
+binding = "JOBS_QUEUE"
+
+[[queues.consumers]]
+queue = "agent-jobs-queue"
+max_batch_size = 10
+max_retries = 5
+dead_letter_queue = "agent-jobs-dlq"
+
+[[queues.producers]]
+queue = "scraping-queue"
+binding = "SCRAPE_QUEUE"
+
+[[queues.consumers]]
+queue = "scraping-queue"
+max_batch_size = 5
+max_retries = 3
+dead_letter_queue = "scraping-dlq"
+
+[[queues.producers]]
+queue = "healing-queue"
+binding = "HEALING_QUEUE"
+
+[[queues.consumers]]
+queue = "healing-queue"
+max_batch_size = 3
+max_retries = 10
+dead_letter_queue = "healing-dlq"
+
+# R2 bucket for large content storage
+[[r2_buckets]]
+binding = "CONTENT_BUCKET"
+bucket_name = "blackroad-content"
+preview_bucket_name = "blackroad-content-preview"
+
+# Production environment overrides
+[env.production]
+vars = { ENVIRONMENT = "production", SELF_HEAL_ENABLED = "true" }
+routes = [
+  { pattern = "scheduler.blackroad.io/*", zone_name = "blackroad.io" }
+]
+
+# Staging environment
+[env.staging]
+vars = { ENVIRONMENT = "staging", SELF_HEAL_ENABLED = "true" }

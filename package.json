@@ -1,0 +1,33 @@
+{
+  "name": "blackroad-content-scheduler",
+  "version": "1.0.0",
+  "description": "BlackRoad Content Scheduler - Agent Jobs, Scraping & Self-Healing System",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "tail": "wrangler tail",
+    "test": "vitest",
+    "typecheck": "tsc --noEmit",
+    "cf-typegen": "wrangler types"
+  },
+  "keywords": [
+    "blackroad",
+    "cloudflare-workers",
+    "content-scheduler",
+    "agent-jobs",
+    "scraping",
+    "self-healing"
+  ],
+  "author": "BlackRoad OS",
+  "license": "SEE LICENSE IN LICENSE",
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240117.0",
+    "typescript": "^5.3.3",
+    "vitest": "^1.2.0",
+    "wrangler": "^3.24.0"
+  },
+  "dependencies": {
+    "hono": "^4.0.0"
+  }
+}
